@@ -1,0 +1,91 @@
+.info-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background-color: var(--card-color);
+  padding: 18px;
+  border-radius: 25px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  width: 100%;
+  min-width: 0;
+  animation: fadeIn 0.7s ease 0.5s forwards;
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+.info-box {
+  background-color: var(--info-color);
+  padding: 16px;
+  border-radius: 25px;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+
+.info-title {
+  color: var(--primary);
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.info-text {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.info-text li {
+  list-style-position: inside;
+}
+
+.info-text.italic {
+  font-style: italic;
+  color: #cbd5f5;
+  letter-spacing: 0.5px;
+}
+
+.coords-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.copy-btn {
+  background-color: var(--primary);
+  border: none;
+  color: black;
+  padding: 4px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.copy-btn:hover {
+  background-color: #16a34a;
+}
+
+.usage-list {
+  list-style-type: disc;
+  margin-left: 20px;
+  padding: 0;
+  text-align: left;
+}
+
+.usage-list li {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 900px) {
+  .info-container {
+    padding: 16px;
+  }
+}

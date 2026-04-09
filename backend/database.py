@@ -1,0 +1,87 @@
+import mysql.connector
+
+class DatabaseManager:
+    def __init__(self, config):
+        self.config = config
+
+    def get_connection(self):
+        return mysql.connector.connect(**self.config)
+
+    def fetch_species_map(self):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute("SELECT species_id, scientific_name FROM species_info")
+            mapping = {
+                row['scientific_name']: row['species_id']
+                for row in cursor.fetchall()
+            }
+
+            conn.close()
+            return mapping
+
+        except Exception as e:
+            print(f"❌ DB Mapping Error: {e}")
+            return {}
+
+    def fetch_all_species(self):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            cursor.execute("SELECT * FROM species_info")
+            data = cursor.fetchall()
+
+            conn.close()
+            return data
+
+        except Exception as e:
+            print(f"❌ DB Fetch Error: {e}")
+            return []
+
+    def save_detection(self, species_id, confidence, lat, lng):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor()
+
+            query = """
+                INSERT INTO plant_detections 
+                (species_id, confidence, latitude, longitude) 
+                VALUES (%s, %s, %s, %s)
+            """
+
+            cursor.execute(query, (species_id, confidence, lat, lng))
+            conn.commit()
+            conn.close()
+
+            return True
+
+        except Exception as e:
+            print(f"❌ DB Save Error: {e}")
+            return False
+        
+    def get_detections(self, limit=50):
+        try:
+            conn = self.get_connection()
+            cursor = conn.cursor(dictionary=True)
+
+            query = """
+                SELECT pd.id, pd.species_id, si.scientific_name, 
+                    pd.confidence, pd.detected_at, 
+                    pd.latitude, pd.longitude
+                FROM plant_detections pd
+                JOIN species_info si ON pd.species_id = si.species_id
+                ORDER BY pd.detected_at DESC
+                LIMIT %s
+            """
+
+            cursor.execute(query, (limit,))
+            data = cursor.fetchall()
+
+            conn.close()
+            return data
+
+        except Exception as e:
+            print(f"❌ DB Fetch Error: {e}")
+            return []

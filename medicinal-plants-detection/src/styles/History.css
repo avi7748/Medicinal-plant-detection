@@ -1,0 +1,164 @@
+/* Container */
+
+
+.history-container {
+  padding: 20px;
+
+  animation: fadeIn 0.7s ease 0.5s forwards;
+  opacity: 0;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+/* Title */
+.history-title {
+  text-align: center;
+  /* color: var(--primary); */
+  color: antiquewhite;
+  margin-bottom: 2px;
+  font-size: 28px;
+  /* border-bottom: 2px solid #501515; */
+  padding-bottom: 5px;
+
+}
+
+/* Table wrapper */
+.table-wrapper {
+  overflow-x: auto;
+}
+
+/* Table */
+.history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--card-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Header */
+.history-table thead {
+  background-color: rgba(255, 93, 75, 0.574); /* match your theme 🔥 */
+}
+
+.history-table th {
+  padding: 12px;
+  text-align: left;
+  font-size: 16px;
+  color: var(--text-main);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Rows */
+.history-table td {
+  padding: 12px;
+  font-size: 16px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.history-table .num{
+  padding-left: 17px;
+}
+
+
+
+/* Hover effect */
+.history-table tbody tr:hover {
+  background-color: rgba(169, 17, 1, 0.1);
+  transition: 0.2s;
+}
+
+/* Zebra rows */
+.history-table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* No data */
+.no-data {
+  text-align: center;
+  margin-top: 15px;
+  color: var(--text-muted);
+}
+
+/* 🔥 Fetch Button */
+.fetch-btn {
+  display: block;
+  margin: 35px auto 40px auto;
+  max-height: auto;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+
+  background: linear-gradient(
+    135deg,
+    rgba(169, 17, 1, 0.9),
+    rgba(169, 17, 1, 0.7)
+  );
+
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+
+  box-shadow: 0 4px 12px rgba(169, 17, 1, 0.4);
+}
+
+
+/* Hover */
+.fetch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(169, 17, 1, 0.6);
+
+  background: linear-gradient(
+    135deg,
+    rgba(169, 17, 1, 1),
+    rgba(169, 17, 1, 0.85)
+  );
+}
+
+.border-bottom {
+  height: 2px;
+  background-color: rgb(255, 255, 255);
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(254, 131, 131, 0.645),
+    transparent
+  );
+}
+
+/* Click */
+.fetch-btn:active {
+  transform: scale(0.96);
+}
+
+/* Focus */
+.fetch-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(169, 17, 1, 0.5);
+}
+
+@media (max-width: 426px) {
+  .history-table td, .history-table th{
+  /* padding: 12px; */
+    font-size: 8px;
+    padding: 6px;
+    
+    
+  }
+  .history-table th{
+    border-left: 1px solid rgb(206, 143, 143);
+    border-right: 1px solid rgb(206, 143, 143);
+  }
+  .history-table td{
+    border-left: 1px solid rgb(255, 255, 255, 0.02);
+    border-right: 1px solid rgb(255, 255, 255, 0.02);
+  }
+}

@@ -1,0 +1,349 @@
+/* Container */
+@import url('https://fonts.googleapis.com');
+
+.plants-container {
+  padding: 20px;
+}
+
+/* Title */
+.plants-title {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    font-size: 30px;
+    font-weight: 600;
+    margin-bottom: 40px;
+    margin-top: 20px;
+    color: aliceblue;
+    text-align: center;
+}
+
+/* Grid */
+.plants-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 30px;
+}
+
+/* Card */
+.plant-card {
+  background-color: var(--card-color);
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  min-height: 500px;
+  max-height: 500px;
+}
+
+/* Hover */
+.plant-card:hover {
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+}
+
+.plant-card::before {
+  content: "";
+  position: absolute;
+  width: 100%;
+  height: 199%;
+  top: -150%;
+  left: 0;
+
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(34, 197, 94, 0.35),
+    transparent
+  );
+
+  transition: top 0.6s ease;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.plant-card:hover::before {
+  top: 100%;
+}
+
+/* Expanded */
+.plant-card.expanded {
+  position: fixed; /* 🔥 key change */
+  top: 50px;                 /* 👈 from top */
+  left: 50%;
+  transform: translateX(-50%);
+  min-height: auto;
+  margin-bottom: 50px;
+  max-height: 90vh;
+  width: auto;
+  z-index: 1000;
+  height: auto;              /* ✅ fix */
+  max-height: auto;  
+  overflow-y: auto; 
+  scrollbar-width: none;
+}
+.plant-card.expanded .plant-image {
+  width: 100%;
+  height: 250px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+
+body.modal-open {
+  overflow: hidden;
+}
+
+/* 🔥 BACKDROP */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+
+  z-index: 999;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto 50px auto;
+  display: block;
+  height: 40px;
+
+  padding: 10px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--card-color);
+  color: white;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+}
+
+.no-result {
+  text-align: center;
+  margin-top: 20px;
+  color: var(--text-muted);
+}
+/* ensure expanded card above backdrop */
+.plant-card.expanded {
+  z-index: 1000;
+}
+
+.plant-card.expanded .view-btn{
+  margin-top: 10px;
+  bottom: 10px;
+}
+
+.plant-card.expanded::before {
+  display: none;
+}
+
+/* IMAGE WRAPPER */
+.image-wrapper {
+  position: relative;
+  z-index: 4;
+}
+
+/* Image */
+.plant-image {
+  width: 100%;
+  height: 190px;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+
+
+/* Overlay */
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.90),
+    rgba(15, 23, 42, 0.5),
+    transparent
+  );
+
+  z-index: 2;
+}
+
+/* Title */
+.image-title {
+  position: absolute;
+  bottom: 12px;
+  left: 15px;
+  font-size: 20px;
+  font-weight: 600;
+  color: white;
+  z-index: 4;
+}
+
+/* Content */
+.plant-content {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  position: relative;
+  z-index: 4;
+}
+
+/* Scientific */
+.plant-scientific {
+  font-size: 16 px;
+  color: #cbd5f5;
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+/* Sections */
+.plant-section {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.plant-section h4 {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.plant-section p {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.plant-card:hover .image-overlay {
+  transform: translateY(1px) scale(1.01);
+}
+
+/* Truncate */
+.truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Button */
+.view-btn {
+  margin-top: auto;
+  background-color: var(--primary);
+  border: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.view-btn:hover {
+  background-color: #16a34a;
+}
+
+.usage-list {
+  margin-top: 5px;
+  padding-left: 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.usage-list li {
+  font-size: 13px;
+  margin-bottom: 4px;
+  list-style-type: disc;
+}
+
+.plant-card, .search-input, .plants-title {
+  animation: fadeIn 0.7s ease 0.5s forwards;
+  opacity: 0;
+}
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+  }
+}
+
+
+/* Responsive */
+@media (max-width: 600px) {
+  .plants-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plant-image {
+    height: 180px;
+  }
+
+  .plant-card {
+     min-height: auto;
+    max-height: none;
+  }
+}
+@media (max-width: 1024px) {
+  
+  .plant-card.expanded {
+    position: fixed; /* 🔥 key change */
+    top: 50px;                 /* 👈 from top */
+    left: 50%;
+    transform: translateX(-50%);
+
+    
+    /* max-height: 90vh; */
+    width: auto;
+    /* margin-top:  0px; */
+    z-index: 1000;
+    height: auto;              /* ✅ fix */
+    max-height: auto;  
+    overflow-y: auto; 
+    
+    scrollbar-width: none;
+    }
+
+}
+@media (max-width: 426px) {
+  
+  .plant-card.expanded {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    
+    /* max-height: 90vh; */
+    width: 90%;
+    margin-top: auto;
+    z-index: 1000;
+    height: auto;
+    max-height: 90%;  
+    overflow-y: auto; 
+    scrollbar-width: none;
+    }
+}
