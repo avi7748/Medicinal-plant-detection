@@ -1,164 +1,460 @@
-/* Container */
-
+/* =========================================================
+   HISTORY PAGE
+========================================================= */
 
 .history-container {
   padding: 20px;
-
   animation: fadeIn 0.7s ease 0.5s forwards;
   opacity: 0;
+  position: relative;
 }
+
 @keyframes fadeIn {
   to {
     opacity: 1;
   }
 }
 
-/* Title */
+/* =========================================================
+   TITLE
+========================================================= */
+
 .history-title {
   text-align: center;
-  /* color: var(--primary); */
   color: antiquewhite;
-  margin-bottom: 2px;
   font-size: 28px;
-  /* border-bottom: 2px solid #501515; */
+  margin-bottom: 2px;
   padding-bottom: 5px;
-
-}
-
-/* Table wrapper */
-.table-wrapper {
-  overflow-x: auto;
-}
-
-/* Table */
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: var(--card-color);
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-/* Header */
-.history-table thead {
-  background-color: rgba(255, 93, 75, 0.574); /* match your theme 🔥 */
-}
-
-.history-table th {
-  padding: 12px;
-  text-align: left;
-  font-size: 16px;
-  color: var(--text-main);
-  border-bottom: 1px solid var(--border);
-}
-
-/* Rows */
-.history-table td {
-  padding: 12px;
-  font-size: 16px;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-}
-
-.history-table .num{
-  padding-left: 17px;
-}
-
-
-
-/* Hover effect */
-.history-table tbody tr:hover {
-  background-color: rgba(169, 17, 1, 0.1);
-  transition: 0.2s;
-}
-
-/* Zebra rows */
-.history-table tbody tr:nth-child(even) {
-  background-color: rgba(255, 255, 255, 0.02);
-}
-
-/* No data */
-.no-data {
-  text-align: center;
-  margin-top: 15px;
-  color: var(--text-muted);
-}
-
-/* 🔥 Fetch Button */
-.fetch-btn {
-  display: block;
-  margin: 35px auto 40px auto;
-  max-height: auto;
-  padding: 10px 20px;
-  border-radius: 10px;
-  border: none;
-
-  background: linear-gradient(
-    135deg,
-    rgba(169, 17, 1, 0.9),
-    rgba(169, 17, 1, 0.7)
-  );
-
-  color: white;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-
-  cursor: pointer;
-  transition: all 0.25s ease;
-
-  box-shadow: 0 4px 12px rgba(169, 17, 1, 0.4);
-}
-
-
-/* Hover */
-.fetch-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(169, 17, 1, 0.6);
-
-  background: linear-gradient(
-    135deg,
-    rgba(169, 17, 1, 1),
-    rgba(169, 17, 1, 0.85)
-  );
 }
 
 .border-bottom {
   height: 2px;
-  background-color: rgb(255, 255, 255);
   background: linear-gradient(
     to right,
     transparent,
-    rgba(254, 131, 131, 0.645),
+    rgba(254, 131, 131, 0.65),
     transparent
   );
 }
 
-/* Click */
-.fetch-btn:active {
-  transform: scale(0.96);
+/* =========================================================
+   FETCH BUTTON
+========================================================= */
+
+.fetch-btn {
+  display: block;
+  margin: 35px auto 30px;
+  padding: 10px 22px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(
+    135deg,
+    rgba(169, 17, 1, .95),
+    rgba(169, 17, 1, .75)
+  );
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: .25s;
+  box-shadow: 0 4px 12px rgba(169,17,1,.35);
 }
 
-/* Focus */
-.fetch-btn:focus {
+.fetch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(169,17,1,.55);
+}
+
+.fetch-btn:active {
+  transform: scale(.96);
+}
+
+/* =========================================================
+   SEARCH + FILTER
+========================================================= */
+
+.search-filter-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    width: 720px;
+    margin: 25px auto;
+}
+.search-input {
+    flex: 1;
+    height: 48px;
+    padding: 0 18px;
+    margin-bottom: 10px;
+    font-size: 15px;
+
+    background: #222d42;
+    color: #fff;
+
+    border: 2px solid #6b7280;
+    border-right: none;
+
+    border-radius: 24px 0 0 24px;
+
+    outline: none;
+}
+
+.search-input::placeholder {
+    color: #b8b8b8;
+}
+
+.search-input:focus {
+    box-shadow: none;
+}
+.filter-btn {
+    width: 120px;
+    height: 48px;
+
+    background: #0f1e3d;
+    color: white;
+
+    border: 2px solid #6b7280;
+    border-left: none;
+
+    border-radius: 0 24px 24px 0;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: .25s;
+}
+
+.filter-btn:hover {
+    background: #2d3a54;
+}
+
+
+.search-filter-container:focus-within .search-input,
+.search-filter-container:focus-within .filter-btn {
+  border-color: #2e7d32;
+}
+
+.filter-btn:hover {
+  background: #f5f5f5;
+  color: #2e7d32;
+}
+
+/* =========================================================
+   FILTER POPUP
+========================================================= */
+
+.filter-overlay {
+  position: absolute;
+  top: 205px;
+  right: 25px;
+  width: 360px;
+  padding: 22px;
+  background: #222;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  box-shadow: 0 18px 45px rgba(0,0,0,.45);
+  z-index: 1000;
+}
+
+.filter-overlay h3 {
+  margin: 0 0 18px;
+  color: antiquewhite;
+  text-align: center;
+  font-size: 22px;
+}
+
+.filter-overlay label {
+  display: block;
+  margin: 12px 0 6px;
+  color: #ddd;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.filter-row {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-row input {
+  flex: 1;
+}
+
+.filter-overlay input,
+.filter-overlay select {
+  width: 100%;
+  height: 42px;
+  margin-bottom: 12px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #2b2b2b;
+  color: white;
   outline: none;
-  box-shadow: 0 0 0 2px rgba(169, 17, 1, 0.5);
+  transition: .25s;
+}
+
+.filter-overlay input:focus,
+.filter-overlay select:focus {
+  border-color: #2e7d32;
+}
+
+.filter-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+
+.filter-actions button {
+  width: 48%;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  transition: .25s;
+}
+
+.filter-actions button:first-child {
+  background: #555;
+  color: white;
+}
+
+.filter-actions button:last-child {
+  background: #2e7d32;
+  color: white;
+}
+
+.filter-actions button:hover {
+  transform: translateY(-2px);
+}
+
+/* Close Button */
+
+.close-filter {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 50%;
+
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+
+  font-size: 20px;
+  font-weight: 600;
+
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.close-filter:hover {
+  background: rgba(255, 80, 80, 0.18);
+  color: #ff5252;
+  transform: rotate(90deg);
+}
+
+.close-filter:active {
+  transform: scale(0.9);
+}
+
+.close-filter:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 82, 82, 0.35);
+}
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrapper {
+  overflow-x: auto;
+  border-radius: 12px;
+  margin-top: 10px;
+}
+
+.history-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: var(--card-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.history-table thead {
+  background: rgba(255, 93, 75, 0.57);
+}
+
+.history-table th,
+.history-table td {
+  padding: 12px 10px;
+  font-size: 15px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.history-table th {
+  color: var(--text-main);
+  font-weight: 600;
+}
+
+.history-table td {
+  color: var(--text-muted);
+}
+
+/* =========================================================
+   COLUMN WIDTHS
+========================================================= */
+
+/* Sr No */
+.history-table th:nth-child(1),
+.history-table td:nth-child(1) {
+  width: 40px;
+}
+
+/* Species ID */
+.history-table th:nth-child(2),
+.history-table td:nth-child(2) {
+  width: 65px;
+}
+
+/* Common Name */
+.history-table th:nth-child(3),
+.history-table td:nth-child(3) {
+  width: 150px;
+}
+
+/* Scientific Name */
+.history-table th:nth-child(4),
+.history-table td:nth-child(4) {
+  width: 230px;
+}
+
+/* Confidence */
+.history-table th:nth-child(5),
+.history-table td:nth-child(5) {
+  width: 100px;
+}
+
+/* Timestamp */
+.history-table th:nth-child(6),
+.history-table td:nth-child(6) {
+  width: 180px;
+}
+
+/* Latitude */
+.history-table th:nth-child(7),
+.history-table td:nth-child(7) {
+  width: 120px;
+}
+
+/* Longitude */
+.history-table th:nth-child(8),
+.history-table td:nth-child(8) {
+  width: 120px;
+}
+
+/* =========================================================
+   ROW EFFECTS
+========================================================= */
+
+.history-table tbody tr {
+  transition: background 0.25s ease;
+}
+
+.history-table tbody tr:nth-child(even) {
+  background: rgba(255,255,255,.02);
+}
+
+.history-table tbody tr:hover {
+  background: rgba(255,255,255,.05);
+}
+
+/* =========================================================
+   NO DATA
+========================================================= */
+
+.no-data {
+  text-align: center;
+  color: var(--text-muted);
+  margin-top: 18px;
+  font-size: 16px;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 768px) {
+
+  .history-container {
+    padding: 12px;
+  }
+
+  .history-title {
+    font-size: 22px;
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+  }
+
+  .history-table {
+    min-width: 900px;
+  }
+
+  .history-table th,
+  .history-table td {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  .filter-overlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    width: 92%;
+    max-width: 380px;
+  }
+
+  .search-filter-container {
+    flex-direction: column;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .search-input {
+    width: 100%;
+    border-radius: 24px;
+    border-right: 2px solid #d6d6d6;
+  }
+
+  .filter-btn {
+    width: 100%;
+    border-radius: 24px;
+    border-left: 2px solid #d6d6d6;
+  }
 }
 
 @media (max-width: 426px) {
-  .history-table td, .history-table th{
-  /* padding: 12px; */
-    font-size: 8px;
+
+  .history-table th,
+  .history-table td {
+    font-size: 10px;
     padding: 6px;
-    
-    
-  }
-  .history-table th{
-    border-left: 1px solid rgb(206, 143, 143);
-    border-right: 1px solid rgb(206, 143, 143);
-  }
-  .history-table td{
-    border-left: 1px solid rgb(255, 255, 255, 0.02);
-    border-right: 1px solid rgb(255, 255, 255, 0.02);
   }
 }

@@ -22,30 +22,48 @@ DB_CONFIG = {
 
 db = DatabaseManager(DB_CONFIG)
 
-model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/plant_yolo11s/weights/best.pt")
+# model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/plant_yolo11s_finetune4/weights/best.pt")
+model = YOLO("C:/Users/avisa/Downloads/plant_yolo11s_finetune4 (1)/plant_yolo11s_finetune4/weights/best.pt")
 IP_CAM = "http://192.0.0.4:8080/video"
 
 latest_frame = None
 frame_lock = threading.Lock()
 
+# 🔥 NEW: lock for GPS
+location_lock = threading.Lock()
+
 last_db_save = datetime.now()
 
-
+# 🔥 FIX: store as float (not string)
 latest_location = {
-    "lat": "18.5204",   
-    "lng": "73.8567"
+    "lat": 18.6224,
+    "lng": 73.8168
 }
 
 species_id_map = db.fetch_species_map()
 
+WRONG_CLASS_ID = 3
+CORRECT_NAME = "Centella asiatica"
+
+
+# ---------------- SOCKET ----------------
 @socketio.on('save_plant_location')
 def handle_location(data):
     global latest_location
 
-    latest_location["lat"] = str(data.get("lat"))
-    latest_location["lng"] = str(data.get("lng"))
+    lat = data.get("lat")
+    lng = data.get("lng")
 
-    # print("Location Updated:", latest_location)
+    if lat is None or lng is None:
+        print("❌ INVALID GPS RECEIVED:", data)
+        return
+
+    # 🔥 THREAD SAFE UPDATE
+    with location_lock:
+        latest_location["lat"] = float(lat)
+        latest_location["lng"] = float(lng)
+
+    # print("✅ UPDATED LOCATION:", latest_location)    
 
 
 # ---------------- API ----------------
@@ -74,41 +92,18 @@ def get_plantinfo(name):
         print("API Error:", e)
         return jsonify({})
 
-def get_detections(self, limit=10):
-    try:
-        conn = self.get_connection()
-        cursor = conn.cursor(dictionary=True)
-
-        query = """
-            SELECT pd.id, pd.species_id, si.scientific_name, 
-                   pd.confidence, pd.detected_at, 
-                   pd.latitude, pd.longitude
-            FROM plant_detections pd
-            JOIN species_info si ON pd.species_id = si.species_id
-            ORDER BY pd.detected_at DESC
-            LIMIT %s
-        """
-
-        cursor.execute(query, (limit,))
-        data = cursor.fetchall()
-
-        conn.close()
-        return data
-
-    except Exception as e:
-        print(f"❌ DB Fetch Error: {e}")
-        return []
 
 @app.route('/api/history')
 def get_history():
     try:
-        limit = 50  # default limit
+        limit = 50
         data = db.get_detections(limit)
         return jsonify(data)
     except Exception as e:
         print("History API Error:", e)
         return jsonify([])
-    
+
+
 # ---------------- CAMERA THREAD ----------------
 def camera_thread():
     global latest_frame
@@ -151,32 +146,34 @@ def inference_loop():
         detections = []
 
         if len(results[0].boxes) > 0:
+
             top_box = results[0].boxes[0]
 
-            top_name = model.names[int(top_box.cls[0])]
+            cls_id = int(top_box.cls[0])
+
+            if cls_id == WRONG_CLASS_ID:
+                top_name = CORRECT_NAME
+            else:
+                top_name = model.names[cls_id]
+
             top_conf = float(top_box.conf[0])
 
-            # 🔥 AUTO SAVE EVERY 10 SEC
+            # SAVE EVERY 10 SEC
             if datetime.now() - last_db_save > timedelta(seconds=10):
 
-                plant_name = top_name.strip()
-
-                # 🔥 case-insensitive match
+                plant_name = top_name.strip().lower()
                 s_id = None
-                clean_name = plant_name.strip().lower()
 
                 for key in species_id_map:
-                    if key and key.strip().lower() == clean_name:
+                    if key and key.strip().lower() == plant_name:
                         s_id = species_id_map[key]
                         break
 
                 if s_id:
-                    try:
-                        lat = float(latest_location["lat"])
-                        lng = float(latest_location["lng"])
-                    except:
-                        lat = 0
-                        lng = 0
+
+                    with location_lock:
+                        lat = latest_location["lat"]
+                        lng = latest_location["lng"]
 
                     success = db.save_detection(
                         s_id,
@@ -186,31 +183,57 @@ def inference_loop():
                     )
 
                     if success:
-                        print(f"SAVED: {plant_name} | {lat}, {lng}")
+                        print(f"SAVED: {top_name} | {lat}, {lng}")
                         last_db_save = datetime.now()
-                else:
-                    print("Species not found:", plant_name)
-                    print("YOLO NAME:", repr(plant_name))
-                    print("DB KEYS:")
-                    for key in species_id_map:
-                        print(repr(key))
 
-            # Emit to frontend
             socketio.emit('request_location', {
+                "detected": True,
                 "name": top_name,
                 "conf": int(top_conf * 100),
                 "time": datetime.now().strftime("%H:%M:%S")
             })
 
             for b in results[0].boxes:
+
                 x1, y1, x2, y2 = b.xyxy[0].tolist()
+
+                label = CORRECT_NAME if int(b.cls[0]) == WRONG_CLASS_ID else model.names[int(b.cls[0])]
 
                 detections.append({
                     "bbox": [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y],
-                    "label": model.names[int(b.cls[0])],
+                    "label": label,
                     "conf": float(b.conf[0])
                 })
 
+        else:
+            socketio.emit('request_location', {
+                "detected": False,
+                "name": "No Medicinal Plant Detected",
+                "conf": 0,
+                "time": datetime.now().strftime("%H:%M:%S")
+            })                  
+
+            # # Emit to frontend
+            # socketio.emit('request_location', {
+            #     "name": top_name,
+            #     "conf": int(top_conf * 100),
+            #     "time": datetime.now().strftime("%H:%M:%S")
+            # })
+
+            # # Draw boxes
+            # for b in results[0].boxes:
+            #     x1, y1, x2, y2 = b.xyxy[0].tolist()
+
+            #     label = CORRECT_NAME if cls_id == WRONG_CLASS_ID else model.names[cls_id]
+
+            #     detections.append({
+            #         "bbox": [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y],
+            #         "label": label,
+            #         "conf": float(b.conf[0])
+            #     })
+
+
+        # Stream
         stream_img = cv2.resize(img, (960, 720))
         _, buffer = cv2.imencode('.jpg', stream_img, [cv2.IMWRITE_JPEG_QUALITY, 50])
 

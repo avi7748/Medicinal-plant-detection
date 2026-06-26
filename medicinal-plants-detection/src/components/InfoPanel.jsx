@@ -17,55 +17,68 @@ const InfoPanel = () => {
   const socketRef = useRef(null);
 
   useEffect(() => {
-    const socket = io("http://localhost:5000");
-    socketRef.current = socket;
+      const socket = io("http://localhost:5000");
+      socketRef.current = socket;
 
-    const updatePlantState = (plantName, time) => {
-      if (!plantName) return;
+      const updatePlantState = (plantName, time) => {
+        if (!plantName) return;
 
-      setActivePlant(plantName);
-      setLastPlant(plantName);
+        setActivePlant(plantName);
+        setLastPlant(plantName);
 
-      setHistory((prev) => {
-        if (prev[0]?.name === plantName) return prev;
-        return [{ name: plantName, time: time || new Date().toLocaleTimeString() }, ...prev].slice(0, 6);
+        setHistory((prev) => {
+          if (prev[0]?.name === plantName) return prev;
+          return [{ name: plantName, time: time || new Date().toLocaleTimeString() }, ...prev].slice(0, 6);
+        });
+      };
+
+      const handleLocation = (data) => {
+
+    // No medicinal plant detected
+    if (!data.detected) {
+
+      setActivePlant("No Medicinal Plant Detected");
+
+      setInfo({
+        scientific_name: "---",
+        description: "No medicinal plant is present in the current frame. Please point the camera toward a medicinal plant.",
+        usage_info: "---"
       });
-    };
 
-    const handleLocation = (data) => {
-      if (!data?.name) return;
+      return;
+    }
 
-      updatePlantState(data.name, data.time);
+    if (!data?.name) return;
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
+    updatePlantState(data.name, data.time);
 
-            setCoords({
-              lat: lat.toFixed(4),
-              lng: lng.toFixed(4)
-            });
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
 
-            socket.emit("save_plant_location", {
-              name: data.name,
-              conf: data.conf,
-              lat: lat,
-              lng: lng
-            });
-          },
-          (err) => console.log("GPS Error:", err),
-          { enableHighAccuracy: true }
-          ,
-          {
-            enableHighAccuracy: true,
-            maximumAge: 0,       
-            timeout: 5000
-          }
-        );
-      }
-    };
+          setCoords({
+            lat: lat.toFixed(4),
+            lng: lng.toFixed(4)
+          });
+
+          socket.emit("save_plant_location", {
+            name: data.name,
+            conf: data.conf,
+            lat,
+            lng
+          });
+        },
+        (err) => console.log("GPS Error:", err),
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 5000
+        }
+      );
+    }
+  };
 
     const handleDetectionData = (data) => {
       const topPrediction = data?.predictions?.[0];
@@ -86,8 +99,11 @@ const InfoPanel = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!activePlant) return;
+useEffect(() => {
+    if (
+        !activePlant ||
+        activePlant === "No Medicinal Plant Detected"
+    ) return;
 
     const fetchData = () => {
       fetch(`http://localhost:5000/api/plantinfo/${encodeURIComponent(activePlant)}`)

@@ -1,5 +1,5 @@
 import cv2, base64, threading, time
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from ultralytics import YOLO
@@ -22,8 +22,13 @@ DB_CONFIG = {
 
 db = DatabaseManager(DB_CONFIG)
 
-model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/plant_yolo11s_finetune4/weights/best.pt")
-IP_CAM = "http://192.0.0.4:8080/video"
+# model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/plant_yolo11s_finetune4/weights/best.pt")
+model = YOLO("C:/Users/avisa/Downloads/plant_yolo11s_finetune4 (1)/plant_yolo11s_finetune4/weights/best.pt")
+camera_ip = None
+camera_url = None
+camera_connected = False
+camera_running = False
+camera_lock = threading.Lock()
 
 latest_frame = None
 frame_lock = threading.Lock()
@@ -103,25 +108,101 @@ def get_history():
         return jsonify([])
 
 
+@app.route("/api/connect-camera", methods=["POST"])
+def connect_camera():
+    global camera_ip
+    global camera_url
+    global camera_connected
+    global camera_running
+
+    data = request.get_json()
+    ip = data.get("ip", "").strip()
+
+    if ip == "":
+        return jsonify({
+            "success": False,
+            "message": "IP Address Required"
+        })
+
+    url = f"http://{ip}:8080/video"
+    cap = cv2.VideoCapture(url)
+
+    if not cap.isOpened():
+        cap.release()
+        return jsonify({
+            "success": False,
+            "message": "Unable to connect"
+        })
+
+    cap.release()
+
+    with camera_lock:
+        camera_ip = ip
+        camera_url = url
+        camera_connected = True
+        camera_running = True
+
+    return jsonify({
+        "success": True,
+        "message": "Camera Connected"
+    })
+
+
+@app.route("/api/disconnect-camera", methods=["POST"])
+def disconnect_camera():
+    global camera_url
+    global camera_ip
+    global latest_frame
+    global camera_running
+
+    with camera_lock:
+        camera_url = None
+        camera_ip = None
+        camera_connected = False
+        camera_running = False
+
+    with frame_lock:
+        latest_frame = None
+
+    print("Camera Disconnected")
+
+    return jsonify({
+        "success": True
+    })
+
+
 # ---------------- CAMERA THREAD ----------------
 def camera_thread():
     global latest_frame
 
     while True:
-        cap = cv2.VideoCapture(IP_CAM)
+        if camera_url is None:
+            time.sleep(1)
+            continue
+
+        cap = cv2.VideoCapture(camera_url)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         while True:
+            # Stop immediately when disconnect is requested
+            if not camera_running:
+                print("Camera Disconnected")
+                break
+
             ret, frame = cap.read()
 
             if not ret:
-                print("Camera Stream Lost. Retrying...")
+                print("Camera Lost")
                 break
 
             with frame_lock:
                 latest_frame = frame
 
         cap.release()
+
+        with frame_lock:
+            latest_frame = None
+
         time.sleep(2)
 
 
@@ -145,6 +226,7 @@ def inference_loop():
         detections = []
 
         if len(results[0].boxes) > 0:
+
             top_box = results[0].boxes[0]
 
             cls_id = int(top_box.cls[0])
@@ -156,7 +238,7 @@ def inference_loop():
 
             top_conf = float(top_box.conf[0])
 
-            # 🔥 SAVE EVERY 10 SEC
+            # SAVE EVERY 10 SEC
             if datetime.now() - last_db_save > timedelta(seconds=10):
 
                 plant_name = top_name.strip().lower()
@@ -168,12 +250,10 @@ def inference_loop():
                         break
 
                 if s_id:
-                    # 🔥 THREAD SAFE READ
+
                     with location_lock:
                         lat = latest_location["lat"]
                         lng = latest_location["lng"]
-
-                    # print(" USING GPS:", lat, lng)
 
                     success = db.save_detection(
                         s_id,
@@ -185,30 +265,53 @@ def inference_loop():
                     if success:
                         print(f"SAVED: {top_name} | {lat}, {lng}")
                         last_db_save = datetime.now()
-                    else:
-                        print(" DB SAVE FAILED")
 
-                else:
-                    print(" Species not found:", top_name)
-
-            # Emit to frontend
             socketio.emit('request_location', {
+                "detected": True,
                 "name": top_name,
                 "conf": int(top_conf * 100),
                 "time": datetime.now().strftime("%H:%M:%S")
             })
 
-            # Draw boxes
             for b in results[0].boxes:
+
                 x1, y1, x2, y2 = b.xyxy[0].tolist()
 
-                label = CORRECT_NAME if cls_id == WRONG_CLASS_ID else model.names[cls_id]
+                label = CORRECT_NAME if int(b.cls[0]) == WRONG_CLASS_ID else model.names[int(b.cls[0])]
 
                 detections.append({
                     "bbox": [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y],
                     "label": label,
                     "conf": float(b.conf[0])
                 })
+
+        else:
+            socketio.emit('request_location', {
+                "detected": False,
+                "name": "No Medicinal Plant Detected",
+                "conf": 0,
+                "time": datetime.now().strftime("%H:%M:%S")
+            })                  
+
+            # # Emit to frontend
+            # socketio.emit('request_location', {
+            #     "name": top_name,
+            #     "conf": int(top_conf * 100),
+            #     "time": datetime.now().strftime("%H:%M:%S")
+            # })
+
+            # # Draw boxes
+            # for b in results[0].boxes:
+            #     x1, y1, x2, y2 = b.xyxy[0].tolist()
+
+            #     label = CORRECT_NAME if cls_id == WRONG_CLASS_ID else model.names[cls_id]
+
+            #     detections.append({
+            #         "bbox": [x1 * scale_x, y1 * scale_y, x2 * scale_x, y2 * scale_y],
+            #         "label": label,
+            #         "conf": float(b.conf[0])
+            #     })
+
 
         # Stream
         stream_img = cv2.resize(img, (960, 720))

@@ -66,12 +66,19 @@ class DatabaseManager:
             conn = self.get_connection()
             cursor = conn.cursor(dictionary=True)
 
-            query = """
-                SELECT pd.id, pd.species_id, si.scientific_name, 
-                    pd.confidence, pd.detected_at, 
-                    pd.latitude, pd.longitude
+            query = query = """
+                SELECT
+                    pd.id,
+                    pd.species_id,
+                    si.name,
+                    si.scientific_name,
+                    pd.confidence,
+                    pd.detected_at,
+                    pd.latitude,
+                    pd.longitude
                 FROM plant_detections pd
-                JOIN species_info si ON pd.species_id = si.species_id
+                JOIN species_info si
+                    ON pd.species_id = si.species_id
                 ORDER BY pd.detected_at DESC
                 LIMIT %s
             """

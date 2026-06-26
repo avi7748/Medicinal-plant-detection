@@ -7,8 +7,15 @@ const LiveStream = () => {
   const canvasRef = useRef(null);
   const socketRef = useRef(null);
   const timeoutRef = useRef(null);
+  const noPlantTimeoutRef = useRef(null);
 
   const [isConnected, setIsConnected] = useState(false);
+  const [cameraIP, setCameraIP] = useState("");
+  const [cameraReady, setCameraReady] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
+  const [connectionError, setConnectionError] = useState("");
+  const [noPlantDetected, setNoPlantDetected] = useState(false);
 
   const VIDEO_WIDTH = 960;
   const VIDEO_HEIGHT = 720;
@@ -44,7 +51,32 @@ const LiveStream = () => {
       imgRef.current.src = `data:image/jpeg;base64,${data.image}`;
 
       // draw boxes
-      drawBoxes(data.predictions);
+      // Show "No medicinal plant detected" only after 6 seconds
+      if (data.predictions && data.predictions.length > 0) {
+
+          // Plant detected
+          setNoPlantDetected(false);
+
+          // Cancel any pending timer
+          if (noPlantTimeoutRef.current) {
+              clearTimeout(noPlantTimeoutRef.current);
+              noPlantTimeoutRef.current = null;
+          }
+
+      } else {
+
+          // Start timer only once
+          if (!noPlantTimeoutRef.current) {
+              noPlantTimeoutRef.current = setTimeout(() => {
+                  setNoPlantDetected(true);
+                  noPlantTimeoutRef.current = null;
+              }, 2000);
+          }
+
+      }
+
+      // Draw boxes
+      drawBoxes(data.predictions);                          
     });
 
     return () => {
@@ -88,11 +120,113 @@ const LiveStream = () => {
     });
   };
 
+  const connectCamera = async () => {
+    const ipRegex = /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+    if (cameraIP.trim() === "") {
+      setConnectionError("Please enter IP address.");
+      setConnectionFailed(true);
+      return;
+    }
+
+    if (!ipRegex.test(cameraIP.trim())) {
+      setConnectionError("Please enter a valid IPv4 address.");
+      setConnectionFailed(true);
+      return;
+    }
+
+    setConnecting(true);
+    setConnectionFailed(false);
+    setConnectionError("");
+
+    const timer = setTimeout(() => {
+      setConnecting(false);
+      setConnectionFailed(true);
+    }, 6000);
+
+    try {
+      const response = await fetch("http://localhost:5000/api/connect-camera", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ip: cameraIP }),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        clearTimeout(timer);
+        setConnecting(false);
+        setCameraReady(true);
+      } else {
+        clearTimeout(timer);
+        setConnecting(false);
+        setConnectionError(result.message);
+        setConnectionFailed(true);
+      }
+    } catch {
+      clearTimeout(timer);
+      setConnecting(false);
+      setConnectionError("Unable to connect.");
+      setConnectionFailed(true);
+    }
+  };
+
+  const disconnectCamera = async () => {
+    try {
+      await fetch("http://localhost:5000/api/disconnect-camera", {
+        method: "POST",
+      });
+      setCameraReady(false);
+      setIsConnected(false);
+      setCameraIP("");
+      setConnectionError("");
+      setNoPlantDetected(false);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
   return (
     <div className="live-container">
       <h2 className="live-title">Live Detection</h2>
 
       <div className="video-wrapper">
+        {!cameraReady && (
+          <div className="camera-connect-overlay">
+            <div className="camera-card">
+              <h2>Connect Mobile Camera</h2>
+              <p>Enter Mobile IP Address</p>
+              <input
+                type="text"
+                className="camera-input"
+                placeholder="Enter Mobile IP Address"
+                value={cameraIP}
+                onChange={(e) => setCameraIP(e.target.value)}
+              />
+              {connectionError && (
+                <p className="camera-error" style={{ color: "red" }}>
+                  {connectionError}
+                </p>
+              )}
+              <button
+                className="camera-connect-btn"
+                onClick={connectCamera}
+              >
+                {connecting ? "Connecting..." : "Connect Camera"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {cameraReady && (
+          <button
+            className="disconnect-btn"
+            onClick={disconnectCamera}
+          >
+            Disconnect
+          </button>
+        )}
+
         <img
           ref={imgRef}
           className="live-video-layer"
@@ -106,8 +240,16 @@ const LiveStream = () => {
         />
 
         {!isConnected && (
-          <div className="camera-overlay">NO SIGNAL</div>
+            <div className="camera-overlay">
+                NO SIGNAL
+            </div>
         )}
+
+        {isConnected && noPlantDetected && (
+            <div className="no-plant-overlay">
+                No medicinal plant detected
+            </div>
+        )}                            
       </div>
 
       <div className="live-status">
