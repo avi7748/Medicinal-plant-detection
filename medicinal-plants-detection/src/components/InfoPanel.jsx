@@ -9,6 +9,7 @@ const InfoPanel = () => {
   const [coords, setCoords] = useState({ lat: "0 ", lng: "0" });
 
   const [info, setInfo] = useState({
+    name: "Waiting...",
     scientific_name: "Waiting...",
     description: "Point your camera at a medicinal plant.",
     usage_info: "---"
@@ -22,13 +23,21 @@ const InfoPanel = () => {
 
       const updatePlantState = (plantName, time) => {
         if (!plantName) return;
-
+        // Don't update if it's the same plant
+        if (plantName === activePlant) return;
         setActivePlant(plantName);
         setLastPlant(plantName);
 
         setHistory((prev) => {
-          if (prev[0]?.name === plantName) return prev;
-          return [{ name: plantName, time: time || new Date().toLocaleTimeString() }, ...prev].slice(0, 6);
+          if (prev[0]?.name === plantName)
+            return prev;
+          return [
+            {
+              name: plantName,
+              time: time || new Date().toLocaleTimeString()
+            },
+            ...prev
+          ].slice(0, 6);
         });
       };
 
@@ -36,15 +45,8 @@ const InfoPanel = () => {
 
     // No medicinal plant detected
     if (!data.detected) {
-
-      setActivePlant("No Medicinal Plant Detected");
-
-      setInfo({
-        scientific_name: "---",
-        description: "No medicinal plant is present in the current frame. Please point the camera toward a medicinal plant.",
-        usage_info: "---"
-      });
-
+      // Keep showing the last detected plant.
+      // Do not clear the information panel.
       return;
     }
 
@@ -81,8 +83,13 @@ const InfoPanel = () => {
   };
 
     const handleDetectionData = (data) => {
-      const topPrediction = data?.predictions?.[0];
-      const plantName = topPrediction?.label || topPrediction?.name;
+      if (!data?.predictions || data.predictions.length === 0) {
+        // Don't update anything if no plant is detected
+        return;
+      }
+
+      const topPrediction = data.predictions[0];
+      const plantName = topPrediction.label || topPrediction.name;
 
       if (!plantName) return;
 
@@ -114,6 +121,7 @@ useEffect(() => {
         .then((data) => {
           if (data && Object.keys(data).length > 0) {
             setInfo({
+              name: data.name || "Not found",
               scientific_name: data.scientific_name || "Not found",
               description: data.description || "No description",
               usage_info: data.usage_info || "---"
@@ -149,7 +157,7 @@ useEffect(() => {
       <div className="info-box highlight">
         <h2 className="info-title">Species</h2>
         <p className="info-text name-header">
-          {activePlant || lastPlant || "Waiting for detection..."}
+          {info.name || "Waiting for detection..."}
         </p>
       </div>
 

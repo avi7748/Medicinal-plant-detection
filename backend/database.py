@@ -61,12 +61,19 @@ class DatabaseManager:
             print(f"❌ DB Save Error: {e}")
             return False
         
-    def get_detections(self, limit=50):
+    def get_detections(self, page=1, limit=50):
         try:
+            offset = (page - 1) * limit
+
             conn = self.get_connection()
             cursor = conn.cursor(dictionary=True)
 
-            query = query = """
+            # Total number of records
+            cursor.execute("SELECT COUNT(*) AS total FROM plant_detections")
+            total = cursor.fetchone()["total"]
+
+            # Fetch paginated records
+            query = """
                 SELECT
                     pd.id,
                     pd.species_id,
@@ -80,15 +87,27 @@ class DatabaseManager:
                 JOIN species_info si
                     ON pd.species_id = si.species_id
                 ORDER BY pd.detected_at DESC
-                LIMIT %s
+                LIMIT %s OFFSET %s
             """
 
-            cursor.execute(query, (limit,))
-            data = cursor.fetchall()
+            cursor.execute(query, (limit, offset))
+            records = cursor.fetchall()
 
             conn.close()
-            return data
+
+            return {
+                "records": records,
+                "page": page,
+                "pages": (total + limit - 1) // limit,
+                "total": total
+            }
 
         except Exception as e:
             print(f"❌ DB Fetch Error: {e}")
-            return []
+
+            return {
+                "records": [],
+                "page": 1,
+                "pages": 1,
+                "total": 0
+            }

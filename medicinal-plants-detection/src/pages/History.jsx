@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "../styles/History.css";
 
 const History = () => {
@@ -6,6 +6,8 @@ const History = () => {
   const [history, setHistory] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showFilter, setShowFilter] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [filters, setFilters] = useState({
     minConfidence: "",
@@ -20,13 +22,13 @@ const History = () => {
   // Fetch Detection History
   // ==========================
 
-  const fetchHistory = () => {
+  const fetchHistory = (pageNo = page) => {
 
-    fetch("http://localhost:5000/api/history")
+    fetch(`http://localhost:5000/api/history?page=${pageNo}`)
       .then((res) => res.json())
       .then((data) => {
 
-        const formatted = data.map((item) => ({
+        const formatted = data.records.map((item) => ({
           id: item.id,
           speciesId: item.species_id,
           name: item.name,
@@ -38,11 +40,16 @@ const History = () => {
         }));
 
         setHistory(formatted);
+        setTotalPages(data.pages);
 
       })
       .catch((err) => console.error(err));
 
   };
+
+  useEffect(() => {
+    fetchHistory(page);
+  }, [page]);
 
   // ==========================
   // Search + Filters
@@ -415,6 +422,16 @@ const History = () => {
 
         ) : null}
 
+      </div>
+
+      <div className="pagination">
+        <button disabled={page === 1} onClick={() => setPage(page - 1)}>
+          Previous
+        </button>
+        <span>Page {page} of {totalPages}</span>
+        <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>
+          Next
+        </button>
       </div>
 
     </div>

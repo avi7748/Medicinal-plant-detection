@@ -57,7 +57,7 @@ const Plants = () => {
       <input
         type="text"
         placeholder="Search plants..."
-        className="search-input"
+        className="plants-search-input"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />

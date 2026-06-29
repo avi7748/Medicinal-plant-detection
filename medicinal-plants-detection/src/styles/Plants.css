@@ -112,7 +112,7 @@ body.modal-open {
   z-index: 999;
 }
 
-.search-input {
+.plants-search-input {
   width: 100%;
   max-width: 800px;
   margin: 0 auto 50px auto;
@@ -131,7 +131,7 @@ body.modal-open {
   outline: none;
 }
 
-.search-input:focus {
+.plants-search-input:focus {
   border-color: var(--primary);
 }
 
@@ -281,7 +281,7 @@ body.modal-open {
   list-style-type: disc;
 }
 
-.plant-card, .search-input, .plants-title {
+.plant-card, .plants-search-input, .plants-title {
   animation: fadeIn 0.7s ease 0.5s forwards;
   opacity: 0;
 }

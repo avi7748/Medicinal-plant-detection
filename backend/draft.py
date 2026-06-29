@@ -1,5 +1,5 @@
 import cv2, base64, threading, time
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_socketio import SocketIO
 from flask_cors import CORS
 from ultralytics import YOLO
@@ -22,9 +22,14 @@ DB_CONFIG = {
 
 db = DatabaseManager(DB_CONFIG)
 
-# model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/plant_yolo11s_finetune4/weights/best.pt")
-model = YOLO("C:/Users/avisa/Downloads/plant_yolo11s_finetune4 (1)/plant_yolo11s_finetune4/weights/best.pt")
-IP_CAM = "http://192.0.0.4:8080/video"
+model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/medicinal_plants_finetune_v23/weights/best.pt")
+# model = YOLO("C:/Users/avisa/Downloads/plant_yolo11s_finetune4 (1)/plant_yolo11s_finetune4/weights/best.pt")
+# model = YOLO(r"D:\Medicinal-Plants-Detection-Using-Machine-Learning-main\Model\Best_Model.pkl")
+camera_ip = None
+camera_url = None
+camera_connected = False
+camera_running = False
+camera_lock = threading.Lock()
 
 latest_frame = None
 frame_lock = threading.Lock()
@@ -96,12 +101,85 @@ def get_plantinfo(name):
 @app.route('/api/history')
 def get_history():
     try:
-        limit = 50
-        data = db.get_detections(limit)
+        page = request.args.get("page", default=1, type=int)
+        limit = request.args.get("limit", default=50, type=int)
+
+        data = db.get_detections(page=page, limit=limit)
+
         return jsonify(data)
+
     except Exception as e:
         print("History API Error:", e)
-        return jsonify([])
+
+        return jsonify({
+            "records": [],
+            "page": 1,
+            "pages": 1,
+            "total": 0
+        })
+
+
+@app.route("/api/connect-camera", methods=["POST"])
+def connect_camera():
+    global camera_ip
+    global camera_url
+    global camera_connected
+    global camera_running
+
+    data = request.get_json()
+    ip = data.get("ip", "").strip()
+
+    if ip == "":
+        return jsonify({
+            "success": False,
+            "message": "IP Address Required"
+        })
+
+    url = f"http://{ip}:8080/video"
+    cap = cv2.VideoCapture(url)
+
+    if not cap.isOpened():
+        cap.release()
+        return jsonify({
+            "success": False,
+            "message": "Unable to connect"
+        })
+
+    cap.release()
+
+    with camera_lock:
+        camera_ip = ip
+        camera_url = url
+        camera_connected = True
+        camera_running = True
+
+    return jsonify({
+        "success": True,
+        "message": "Camera Connected"
+    })
+
+
+@app.route("/api/disconnect-camera", methods=["POST"])
+def disconnect_camera():
+    global camera_url
+    global camera_ip
+    global latest_frame
+    global camera_running
+
+    with camera_lock:
+        camera_url = None
+        camera_ip = None
+        camera_connected = False
+        camera_running = False
+
+    with frame_lock:
+        latest_frame = None
+
+    print("Camera Disconnected")
+
+    return jsonify({
+        "success": True
+    })
 
 
 # ---------------- CAMERA THREAD ----------------
@@ -109,20 +187,33 @@ def camera_thread():
     global latest_frame
 
     while True:
-        cap = cv2.VideoCapture(IP_CAM)
+        if camera_url is None:
+            time.sleep(1)
+            continue
+
+        cap = cv2.VideoCapture(camera_url)
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         while True:
+            # Stop immediately when disconnect is requested
+            if not camera_running:
+                print("Camera Disconnected")
+                break
+
             ret, frame = cap.read()
 
             if not ret:
-                print("Camera Stream Lost. Retrying...")
+                print("Camera Lost")
                 break
 
             with frame_lock:
                 latest_frame = frame
 
         cap.release()
+
+        with frame_lock:
+            latest_frame = None
+
         time.sleep(2)
 
 
