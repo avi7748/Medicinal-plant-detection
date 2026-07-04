@@ -304,14 +304,12 @@ def inference_loop():
                 "time": datetime.now().strftime("%H:%M:%S")
             })                  
 
-            # # Emit to frontend
             # socketio.emit('request_location', {
             #     "name": top_name,
             #     "conf": int(top_conf * 100),
             #     "time": datetime.now().strftime("%H:%M:%S")
             # })
 
-            # # Draw boxes
             # for b in results[0].boxes:
             #     x1, y1, x2, y2 = b.xyxy[0].tolist()
 
@@ -324,7 +322,6 @@ def inference_loop():
             #     })
 
 
-        # Stream
         stream_img = cv2.resize(img, (960, 720))
         _, buffer = cv2.imencode('.jpg', stream_img, [cv2.IMWRITE_JPEG_QUALITY, 50])
 
@@ -336,7 +333,6 @@ def inference_loop():
         socketio.sleep(0.01)
 
 
-# ---------------- MAIN ----------------
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, daemon=True).start()
     socketio.start_background_task(inference_loop)

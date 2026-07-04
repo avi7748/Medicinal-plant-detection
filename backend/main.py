@@ -8,12 +8,10 @@ from datetime import datetime, timedelta
 from urllib.parse import unquote
 from database import DatabaseManager
 
-# ---------------- APP SETUP ----------------
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-# ---------------- CONFIG ----------------
 DB_CONFIG = {
     'host': 'localhost',
     'user': 'root',
@@ -23,9 +21,8 @@ DB_CONFIG = {
 
 db = DatabaseManager(DB_CONFIG)
 
-model = YOLO("D:/ENGINEERING/BE Project/Med/new/runs/detect/runs/detect/medicinal_plants_finetune_v23/weights/best.pt")
-# model = YOLO("C:/Users/avisa/Downloads/plant_yolo11s_finetune4 (1)/plant_yolo11s_finetune4/weights/best.pt")
-# model = YOLO(r"D:\Medicinal-Plants-Detection-Using-Machine-Learning-main\Model\Best_Model.pkl")
+model = YOLO("best.pt")
+
 camera_ip = None
 camera_url = None
 camera_connected = False
@@ -40,8 +37,8 @@ location_lock = threading.Lock()
 last_db_save = datetime.now()
 
 latest_location = {
-    "lat": 18.6224,
-    "lng": 73.8168
+    "lat": 18.0,
+    "lng": 73.0
 }
 
 species_id_map = db.fetch_species_map()
@@ -50,7 +47,6 @@ WRONG_CLASS_ID = 3
 CORRECT_NAME = "Centella asiatica"
 
 
-# ---------------- SOCKET ----------------
 @socketio.on('save_plant_location')
 def handle_location(data):
     global latest_location
@@ -62,15 +58,12 @@ def handle_location(data):
         print("❌ INVALID GPS RECEIVED:", data)
         return
 
-    # 🔥 THREAD SAFE UPDATE
     with location_lock:
         latest_location["lat"] = float(lat)
         latest_location["lng"] = float(lng)
 
-    # print("✅ UPDATED LOCATION:", latest_location)    
 
 
-# ---------------- API ----------------
 @app.route('/api/species')
 def fetch_library():
     return jsonify(db.fetch_all_species())
@@ -210,7 +203,6 @@ def process_frame():
     })
 
 
-# ---------------- CAMERA THREAD ----------------
 def camera_thread():
     global latest_frame
 
@@ -223,7 +215,6 @@ def camera_thread():
         cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         while True:
-            # Stop immediately when disconnect is requested
             if not camera_running:
                 print("Camera Disconnected")
                 break
@@ -245,7 +236,6 @@ def camera_thread():
         time.sleep(2)
 
 
-# ---------------- YOLO DETECTION ----------------
 def run_yolo_detection(img, save_to_db=False):
     global last_db_save
     raw_h, raw_w = img.shape[:2]
@@ -320,7 +310,6 @@ def run_yolo_detection(img, save_to_db=False):
     return detections
 
 
-# ---------------- INFERENCE LOOP ----------------
 def inference_loop():
     global last_db_save
 
@@ -336,7 +325,6 @@ def inference_loop():
             img,
             save_to_db=True)
 
-        # Stream
         stream_img = cv2.resize(img, (960, 720))
         _, buffer = cv2.imencode('.jpg', stream_img, [cv2.IMWRITE_JPEG_QUALITY, 50])
 
@@ -348,7 +336,6 @@ def inference_loop():
         socketio.sleep(0.01)
 
 
-# ---------------- MAIN ----------------
 if __name__ == "__main__":
     threading.Thread(target=camera_thread, daemon=True).start()
     socketio.start_background_task(inference_loop)

@@ -22,7 +22,7 @@ class DatabaseManager:
             return mapping
 
         except Exception as e:
-            print(f"❌ DB Mapping Error: {e}")
+            print(f"DB Mapping Error: {e}")
             return {}
 
     def fetch_all_species(self):
@@ -37,7 +37,7 @@ class DatabaseManager:
             return data
 
         except Exception as e:
-            print(f"❌ DB Fetch Error: {e}")
+            print(f" DB Fetch Error: {e}")
             return []
 
     def save_detection(self, species_id, confidence, lat, lng):
@@ -58,7 +58,7 @@ class DatabaseManager:
             return True
 
         except Exception as e:
-            print(f"❌ DB Save Error: {e}")
+            print(f" DB Save Error: {e}")
             return False
         
     def get_detections(self, page=1, limit=50):
@@ -68,11 +68,9 @@ class DatabaseManager:
             conn = self.get_connection()
             cursor = conn.cursor(dictionary=True)
 
-            # Total number of records
             cursor.execute("SELECT COUNT(*) AS total FROM plant_detections")
             total = cursor.fetchone()["total"]
 
-            # Fetch paginated records
             query = """
                 SELECT
                     pd.id,
@@ -103,7 +101,7 @@ class DatabaseManager:
             }
 
         except Exception as e:
-            print(f"❌ DB Fetch Error: {e}")
+            print(f" DB Fetch Error: {e}")
 
             return {
                 "records": [],
