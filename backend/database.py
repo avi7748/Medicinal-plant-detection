@@ -5,7 +5,16 @@ class DatabaseManager:
         self.config = config
 
     def get_connection(self):
-        return mysql.connector.connect(**self.config)
+        return mysql.connector.connect(
+            host=self.config["host"],
+            port=self.config["port"],
+            user=self.config["user"],
+            password=self.config["password"],
+            database=self.config["database"],
+            ssl_ca=self.config["ssl_ca"],
+            ssl_verify_cert=self.config["ssl_verify_cert"],
+            ssl_verify_identity=self.config["ssl_verify_identity"]
+    )
 
     def fetch_species_map(self):
         try:

@@ -1,31 +1,29 @@
-# Add all your plants here
-PLANT_INFO = {
-    "Aloe vera": "Aloe barbadensis miller",
-    "Neem": "Azadirachta indica",
-    "Tulsi": "Ocimum tenuiflorum",
-    # 👉 add all 30 classes
-}
+import mysql.connector
 
-last_detected = set()
+conn = mysql.connector.connect(
+    host="gateway01.ap-southeast-1.prod.aws.tidbcloud.com",
+    port=4000,
+    user="3noUnQMNTbFvdod.root",
+    password="LsBbou1VG9bSjYVj",
+    database="medicinal_plants",
+    ssl_disabled=False
+)
 
-def process_detections(detections):
-    global last_detected
 
-    current = set([d["name"] for d in detections])
+cursor = conn.cursor()
 
-    # ❌ No new species → skip
-    if current == last_detected:
-        return None
+with open("medicinal_plants_species_info.sql", "r", encoding="utf-8") as f:
+    sql = f.read()
 
-    last_detected = current
+for statement in sql.split(";"):
+    stmt = statement.strip()
+    if stmt:
+        try:
+            cursor.execute(stmt)
+        except Exception as e:
+            print(e)
 
-    enriched = []
-    for d in detections:
-        enriched.append({
-            "name": d["name"],
-            "scientific_name": PLANT_INFO.get(d["name"], "Unknown"),
-            "confidence": d["confidence"],
-            "bbox": d["bbox"]
-        })
+conn.commit()
+conn.close()
 
-    return enriched
+print("Import Complete")

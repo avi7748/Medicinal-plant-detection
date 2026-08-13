@@ -13,12 +13,15 @@ CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'root',
-    'database': 'medicinal_plants'
+    'host': 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com',
+    'port': 4000,
+    'user': '3noUnQMNTbFvdod.root',
+    'password': 'LsBbou1VG9bSjYVj',
+    'database': 'medicinal_plants',
+    'ssl_verify_cert': True,
+    'ssl_verify_identity': True,
+    'ssl_ca': 'isrgrootx1.pem'   # Change to your downloaded CA certificate path
 }
-
 db = DatabaseManager(DB_CONFIG)
 
 model = YOLO("best.pt")
